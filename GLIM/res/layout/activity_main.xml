@@ -1,0 +1,76 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:keepScreenOn="true"
+    android:background="@color/black"
+    tools:context=".MainActivity" >
+
+    <edu.gatech.ubicomp.glim.EDAWaveformView
+        android:id="@+id/waveformView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <TextView
+        android:id="@+id/label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|right"
+        android:layout_marginRight="@dimen/footer_right_margin"
+        android:layout_marginBottom="@dimen/footer_bottom_margin"
+        android:textSize="@dimen/footer_text_size" />
+<!--     <TextView
+        android:id="@+id/phrase_hint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal|top"
+        android:layout_marginBottom="29px"
+        android:text="@string/annotation_action" /> -->
+
+        <TextView
+        android:id="@+id/labelHeartRate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="left"
+        android:text="@string/labelHeartRate"
+        android:visibility="gone" />
+            <TextView
+        android:id="@+id/InstantSpeed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        android:text="000"
+        android:textSize="20sp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right" >
+
+        <!-- Heart Icon: Jardson Araújo, from The Noun Project -->
+
+        <ImageView
+            android:id="@+id/heartBeatImage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:scaleType="fitStart"
+            android:src="@drawable/heart" />
+
+        <TextView
+            android:id="@+id/HRTextBox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="000"
+            android:textSize="20sp" />
+    </LinearLayout>
+    
+        <TextView
+        android:id="@+id/StatusTextBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|left"
+        android:text="Status Message Box"
+        android:textSize="20sp" />
+    
+</FrameLayout>
