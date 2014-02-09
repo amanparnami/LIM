@@ -70,7 +70,6 @@
             android:id="@+id/hrIndicatorRest"
             android:layout_width="140dp"
             android:layout_height="match_parent"
-            android:layout_gravity="left"
             android:background="@color/green_dull"
             android:orientation="horizontal" />
 
@@ -85,6 +84,7 @@
             android:id="@+id/HRTextBox"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textSize="30sp"
             android:text="000"
            />
             </LinearLayout>
