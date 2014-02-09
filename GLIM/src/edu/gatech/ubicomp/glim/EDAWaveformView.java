@@ -226,7 +226,7 @@ public class EDAWaveformView extends SurfaceView {
 //        	canvas.drawLine(0, runningAverage + centerY, width-1, runningAverage + centerY, mPaint); //running average
         	mPaint.setARGB(255, 34, 167, 255);
         	canvas.drawLine(lastX, lastY,x,y, mPaint); //EDA Signal 
-        	mPaint.setARGB(128, 120, 120, 120);
+        	mPaint.setARGB(255, 80, 80, 80);
         	canvas.drawLine(0,xAxisPos, width-1,xAxisPos, mPaint); //xAxis
         }
         
