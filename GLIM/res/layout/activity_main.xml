@@ -4,6 +4,7 @@
     android:layout_height="match_parent"
     android:keepScreenOn="true"
     android:background="@color/black"
+    android:padding="40dp"
     tools:context=".MainActivity" >
 
     <edu.gatech.ubicomp.glim.EDAWaveformView
@@ -44,25 +45,48 @@
         android:visibility="gone" />
 
     <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="right" >
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_gravity="top" 
+        android:orientation="horizontal">
 
+        
         <!-- Heart Icon: Jardson Araújo, from The Noun Project -->
 
-        <ImageView
+<!--         <ImageView
             android:id="@+id/heartBeatImage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:scaleType="fitStart"
-            android:src="@drawable/heart" />
+            android:src="@drawable/heart" /> -->
 
         <TextView
             android:id="@+id/HRTextBox"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="000"
-            android:textSize="20sp" />
+            android:textSize="20sp" 
+            android:visibility="gone" />
+        
+        <LinearLayout
+            android:layout_width="160dp"
+        android:layout_height="20dp"
+        android:layout_gravity="left"
+        android:background="@color/green"/>
+
+        <LinearLayout
+            android:layout_width="180dp"
+        android:layout_height="20dp"
+        android:layout_gravity="center_horizontal"
+        android:background="@color/yellow"/>
+        <LinearLayout
+            android:layout_width="220dp"
+        android:layout_height="20dp"
+        android:layout_gravity="right"
+        android:background="@color/red"/>
+        
+        
+
     </LinearLayout>
     
         <TextView
@@ -70,7 +94,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|left"
-        android:text="Status Message Box"
+        android:text=""
         android:textSize="20sp" />
     
 </FrameLayout>
