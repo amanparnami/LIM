@@ -78,6 +78,15 @@ public class EDAWaveformView extends SurfaceView {
     mPaint.setColor(Color.WHITE);
     mPaint.setStrokeWidth(0);
     mPaint.setAntiAlias(true);
+    
+    //FIXME Following code is supposed to draw the axis line as soon as EDAWaveformView is instantiated.
+//    Canvas canvas = getHolder().lockCanvas();
+//    if (canvas != null) {
+//    	mPaint.setARGB(128, 120, 120, 120);
+//    	int xAxisPos = (3* getHeight()) / 4;
+//    	canvas.drawLine(0,xAxisPos, getWidth()-1,xAxisPos, mPaint); //xAxis
+//    	getHolder().unlockCanvasAndPost(canvas);
+//    }
   }
 
   /**
@@ -215,9 +224,9 @@ public class EDAWaveformView extends SurfaceView {
           //canvas.drawLine(lastX, lastY, x, y, mPaint);
 //        	mPaint.setARGB(120, 0, 120, 0);
 //        	canvas.drawLine(0, runningAverage + centerY, width-1, runningAverage + centerY, mPaint); //running average
-        	mPaint.setARGB(255, 0, 255, 0);
+        	mPaint.setARGB(255, 34, 167, 255);
         	canvas.drawLine(lastX, lastY,x,y, mPaint); //EDA Signal 
-        	mPaint.setARGB(255, 120, 120, 120);
+        	mPaint.setARGB(128, 120, 120, 120);
         	canvas.drawLine(0,xAxisPos, width-1,xAxisPos, mPaint); //xAxis
         }
         
