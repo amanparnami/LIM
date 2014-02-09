@@ -148,8 +148,8 @@ public class MainActivity extends Activity {
 		
 		mGestureDetector = createGestureDetector(this);
 		
-		image = (ImageView) findViewById(R.id.heartBeatImage);
-		pulseHeartAnim = AnimationUtils.loadAnimation(this, R.anim.pulse);
+		//image = (ImageView) findViewById(R.id.heartBeatImage);
+		//pulseHeartAnim = AnimationUtils.loadAnimation(this, R.anim.pulse);
 	}
 
 	@Override
@@ -171,7 +171,7 @@ public class MainActivity extends Activity {
 			// sendDataToServer(mEDABuffer);
 			return true;
 		case KeyEvent.KEYCODE_TAB:
-			saveAnnotation();
+			//saveAnnotation();
 			return true;
 		default:
 			return super.onKeyDown(keyCode, event);
@@ -635,7 +635,7 @@ public class MainActivity extends Activity {
 		/*
 		 * Stopping the animation
 		 */
-		image.clearAnimation();
+		//image.clearAnimation();
 
 		/* This disconnects listener from acting on received messages */
 		_bt.removeConnectedEventListener(_NConnListener);
@@ -695,7 +695,7 @@ public class MainActivity extends Activity {
 
 			// Reset all the values to 0s
 
-			image.startAnimation(pulseHeartAnim);
+			//image.startAnimation(pulseHeartAnim);
 
 		} else {
 //			TextView tv = (TextView) findViewById(R.id.StatusTextBox);
