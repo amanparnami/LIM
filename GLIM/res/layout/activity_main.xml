@@ -2,9 +2,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:keepScreenOn="true"
     android:background="@color/black"
-    android:padding="40dp"
+    android:keepScreenOn="true"
     tools:context=".MainActivity" >
 
     <edu.gatech.ubicomp.glim.EDAWaveformView
@@ -17,25 +16,28 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|right"
-        android:layout_marginRight="@dimen/footer_right_margin"
         android:layout_marginBottom="@dimen/footer_bottom_margin"
+        android:layout_marginRight="@dimen/footer_right_margin"
         android:textSize="@dimen/footer_text_size" />
-<!--     <TextView
+    <!--
+         <TextView
         android:id="@+id/phrase_hint"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal|top"
         android:layout_marginBottom="29px"
-        android:text="@string/annotation_action" /> -->
+        android:text="@string/annotation_action" />
+    -->
 
-        <TextView
+    <TextView
         android:id="@+id/labelHeartRate"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="left"
         android:text="@string/labelHeartRate"
         android:visibility="gone" />
-            <TextView
+
+    <TextView
         android:id="@+id/InstantSpeed"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -47,54 +49,60 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="40dp"
-        android:layout_gravity="top" 
-        android:orientation="horizontal">
+        android:layout_gravity="top"
+        android:orientation="horizontal" >
 
-        
         <!-- Heart Icon: Jardson Araújo, from The Noun Project -->
 
-<!--         <ImageView
+
+        <!--
+             <ImageView
             android:id="@+id/heartBeatImage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:scaleType="fitStart"
-            android:src="@drawable/heart" /> -->
+            android:src="@drawable/heart" />
+        -->
 
-        <TextView
+        
+
+        <LinearLayout
+            android:id="@+id/hrIndicatorRest"
+            android:layout_width="140dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="left"
+            android:background="@color/green_dull"
+            android:orientation="horizontal" />
+
+        <LinearLayout
+            android:id="@+id/hrIndicatorActive"
+            android:layout_width="140dp"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:background="@color/yellow_dull" 
+            android:orientation="horizontal" >
+            <TextView
             android:id="@+id/HRTextBox"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="000"
-            android:textSize="20sp" 
-            android:visibility="gone" />
-        
-        <LinearLayout
-            android:layout_width="160dp"
-        android:layout_height="20dp"
-        android:layout_gravity="left"
-        android:background="@color/green"/>
+           />
+            </LinearLayout>
 
         <LinearLayout
-            android:layout_width="180dp"
-        android:layout_height="20dp"
-        android:layout_gravity="center_horizontal"
-        android:background="@color/yellow"/>
-        <LinearLayout
-            android:layout_width="220dp"
-        android:layout_height="20dp"
-        android:layout_gravity="right"
-        android:background="@color/red"/>
-        
-        
-
+            android:id="@+id/hrIndicatorHyper"
+            android:layout_width="140dp"
+            android:layout_height="match_parent"
+            android:background="@color/red_dull" 
+            android:orientation="horizontal" />
     </LinearLayout>
-    
-        <TextView
+
+    <TextView
         android:id="@+id/StatusTextBox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|left"
         android:text=""
         android:textSize="20sp" />
-    
+
 </FrameLayout>

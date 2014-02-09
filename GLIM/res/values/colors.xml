@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="black">#ff000000</color>
-    <color name="green">#ff00ff00</color>
-    <color name="yellow">#ffffff00</color>
-    <color name="red">#ffff0000</color>
+    <color name="green_bright">#ff99cc33</color>
+    <color name="green_dull">#2299cc33</color>
+    <color name="yellow_dull">#22ddbb11</color>
+    <color name="yellow_bright">#ffddbb11</color>
+    <color name="red_dull">#22cc3333</color>
+    <color name="red_bright">#ffcc3333</color>
 </resources>

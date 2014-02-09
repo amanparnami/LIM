@@ -37,6 +37,7 @@ import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -46,6 +47,7 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Switch;
 import android.widget.TextView;
 
@@ -62,21 +64,21 @@ public class MainActivity extends Activity {
 	int readBufferPosition;
 	int counter;
 	volatile boolean stopWorker;
-	
+
 	boolean isConnected = false;
-	
+
 	private GestureDetector mGestureDetector;
-	
+
 	private static final UUID MY_UUID_FOR_ANDROID_DEVICES = UUID
 			.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66"); // UUID for
-																	// talking
-																	// to other
-																	// android
-																	// device
+	// talking
+	// to other
+	// android
+	// device
 	private static final UUID MY_UUID_FOR_NON_ANDROID_DEVICES = UUID
 			.fromString("00001101-0000-1000-8000-00805f9b34fb"); // Standard
-																	// SerialPortService
-																	// ID
+	// SerialPortService
+	// ID
 	private static final String MAC_ADD_FOR_Q_SENSOR = "00:06:66:0A:50:D5";// "00:06:66:08:D9:90";
 	private static final String BT_MAC_ADD_FOR_GLASS = "F8:8F:CA:24:82:48";
 	private static final String WiFi_MAC_ADD_FOR_GLASS = "f8:8f:ca:24:82:47";
@@ -85,7 +87,7 @@ public class MainActivity extends Activity {
 	private static final String PIN = "0000";
 	private static final int MAX_BUFFER_SIZE = 32; // TODO change it to 32
 	private static final String[] DATA_HEADER_TAGS = { "time", "z", "y", "x",
-			"battery", "temp", "eda", "event" };
+		"battery", "temp", "eda", "event" };
 	private static final String[] EDA_DATA_HEADER_TAGS = { "time", "eda" };
 	private static final String[] EDA_ANNOTATION_HEADER_TAGS = { "time" };
 
@@ -112,11 +114,30 @@ public class MainActivity extends Activity {
 			TextView tv;
 			switch (msg.what) {
 			case HEART_RATE:
-				String HeartRatetext = msg.getData().getString("HeartRate");
+				String heartRateText = msg.getData().getString("HeartRate");
 				tv = (TextView) findViewById(R.id.HRTextBox);
-				System.out.println("Heart Rate Info is " + HeartRatetext);
-				if (tv != null)
-					tv.setText(HeartRatetext);
+				System.out.println("Heart Rate Info is " + heartRateText);
+				if (tv != null) {
+					tv.setText(heartRateText);
+					float currentHR = Float.parseFloat(heartRateText);
+					if(currentHR < 90.0) { //Rest condition
+						tv.setTextColor(Color.WHITE);
+						((LinearLayout) findViewById(R.id.hrIndicatorRest)).setBackgroundResource(R.color.green_bright);
+						((LinearLayout) findViewById(R.id.hrIndicatorActive)).setBackgroundResource(R.color.yellow_dull);
+						((LinearLayout) findViewById(R.id.hrIndicatorHyper)).setBackgroundResource(R.color.red_dull);
+					} else if (currentHR >= 90.0 && currentHR < 150.0) { //Active condition
+						tv.setTextColor(Color.BLACK);
+						((LinearLayout) findViewById(R.id.hrIndicatorRest)).setBackgroundResource(R.color.green_dull);
+						((LinearLayout) findViewById(R.id.hrIndicatorActive)).setBackgroundResource(R.color.yellow_bright);
+						((LinearLayout) findViewById(R.id.hrIndicatorHyper)).setBackgroundResource(R.color.red_dull);
+					} else { //Hyper condition
+						tv.setTextColor(Color.WHITE);
+						((LinearLayout) findViewById(R.id.hrIndicatorRest)).setBackgroundResource(R.color.green_dull);
+						((LinearLayout) findViewById(R.id.hrIndicatorActive)).setBackgroundResource(R.color.yellow_dull);
+						((LinearLayout) findViewById(R.id.hrIndicatorHyper)).setBackgroundResource(R.color.red_bright);
+					}
+
+				}
 				break;
 
 			case INSTANT_SPEED:
@@ -145,9 +166,9 @@ public class MainActivity extends Activity {
 		mWaveformView = (EDAWaveformView) findViewById(R.id.waveformView);
 		mBufferSize = 0;
 		mEDABuffer = new ArrayList<String>();
-		
+
 		mGestureDetector = createGestureDetector(this);
-		
+
 		//image = (ImageView) findViewById(R.id.heartBeatImage);
 		//pulseHeartAnim = AnimationUtils.loadAnimation(this, R.anim.pulse);
 	}
@@ -177,80 +198,80 @@ public class MainActivity extends Activity {
 			return super.onKeyDown(keyCode, event);
 		}
 	}
-	
-    private GestureDetector createGestureDetector(Context context) {
-    GestureDetector gestureDetector = new GestureDetector(context);
-        //Create a base listener for generic gestures
-        gestureDetector.setBaseListener( new GestureDetector.BaseListener() {
-            @Override
-            public boolean onGesture(Gesture gesture) {
-                if (gesture == Gesture.TAP) {
-                    // do something on tap
-                    return true;
-                } else if (gesture == Gesture.TWO_TAP) {
-                    // do something on two finger tap
-        			if(!isConnected) {
-                	try {
-        				// For Q Sensor
-        				findBT();
-        				openBT();
 
-        				// For HRM
-        				connectBT();
-        				isConnected = !isConnected;
-        			} catch (IOException ex) {
-        			}
-        			}else {
-        				// Disconnect Bluetooth
-        				try {
-        					// For Q Sensor
-        					closeBT();
+	private GestureDetector createGestureDetector(Context context) {
+		GestureDetector gestureDetector = new GestureDetector(context);
+		//Create a base listener for generic gestures
+		gestureDetector.setBaseListener( new GestureDetector.BaseListener() {
+			@Override
+			public boolean onGesture(Gesture gesture) {
+				if (gesture == Gesture.TAP) {
+					// do something on tap
+					return true;
+				} else if (gesture == Gesture.TWO_TAP) {
+					// do something on two finger tap
+					if(!isConnected) {
+						try {
+							// For Q Sensor
+							findBT();
+							openBT();
 
-        					// For HRM
-        					disconnectBT();
-        					isConnected = !isConnected;
-        				} catch (IOException ex) {
-        				}
-        				
-        			}
-                    return true;
-                } else if (gesture == Gesture.SWIPE_RIGHT) {
-                    // do something on right (forward) swipe
-                    return true;
-                } else if (gesture == Gesture.SWIPE_LEFT) {
-                    // do something on left (backwards) swipe
-                    return true;
-                }
-                return false;
-            }
-        });
-//        gestureDetector.setFingerListener(new GestureDetector.FingerListener() {
-//            @Override
-//            public void onFingerCountChanged(int previousCount, int currentCount) {
-//              // do something on finger count changes
-//            }
-//        });
-//        gestureDetector.setScrollListener(new GestureDetector.ScrollListener() {
-//            @Override
-//            public boolean onScroll(float displacement, float delta, float velocity) {
-//                // do something on scrolling
-//            }
-//        });
-        return gestureDetector;
-    }
+							// For HRM
+							connectBT();
+							isConnected = !isConnected;
+						} catch (IOException ex) {
+						}
+					}else {
+						// Disconnect Bluetooth
+						try {
+							// For Q Sensor
+							closeBT();
 
-    /*
-     * Send generic motion events to the gesture detector
-     */
-    @Override
-    public boolean onGenericMotionEvent(MotionEvent event) {
-        if (mGestureDetector != null) {
-            return mGestureDetector.onMotionEvent(event);
-        }
-        return false;
-    }
+							// For HRM
+							disconnectBT();
+							isConnected = !isConnected;
+						} catch (IOException ex) {
+						}
 
-/*	public void onToggleClicked(View view) {
+					}
+					return true;
+				} else if (gesture == Gesture.SWIPE_RIGHT) {
+					// do something on right (forward) swipe
+					return true;
+				} else if (gesture == Gesture.SWIPE_LEFT) {
+					// do something on left (backwards) swipe
+					return true;
+				}
+				return false;
+			}
+		});
+		//        gestureDetector.setFingerListener(new GestureDetector.FingerListener() {
+		//            @Override
+		//            public void onFingerCountChanged(int previousCount, int currentCount) {
+		//              // do something on finger count changes
+		//            }
+		//        });
+		//        gestureDetector.setScrollListener(new GestureDetector.ScrollListener() {
+		//            @Override
+		//            public boolean onScroll(float displacement, float delta, float velocity) {
+		//                // do something on scrolling
+		//            }
+		//        });
+		return gestureDetector;
+	}
+
+	/*
+	 * Send generic motion events to the gesture detector
+	 */
+	@Override
+	public boolean onGenericMotionEvent(MotionEvent event) {
+		if (mGestureDetector != null) {
+			return mGestureDetector.onMotionEvent(event);
+		}
+		return false;
+	}
+
+	/*	public void onToggleClicked(View view) {
 		// Is the toggle on?
 		boolean on = ((Switch) view).isChecked();
 
@@ -331,7 +352,7 @@ public class MainActivity extends Activity {
 	void beginListenForData() {
 		final Handler handler = new Handler();
 		final byte delimiter = 10; // This is the ASCII code for a newline
-									// character
+		// character
 
 		stopWorker = false;
 		readBufferPosition = 0;
@@ -406,7 +427,7 @@ public class MainActivity extends Activity {
 											}
 
 											mWaveformView
-													.updateEDADataSimple(fEdaSignal);
+											.updateEDADataSimple(fEdaSignal);
 											myLabel.setText(fEdaSignal
 													.toString());// data);
 										}
@@ -551,11 +572,11 @@ public class MainActivity extends Activity {
 				// of 128 used in EDAWaveformView.java
 				jsonObject.accumulate("annotation",
 						System.currentTimeMillis() - 2000); // subtracted 2000ms
-															// to adjust the
-															// annotation to
-															// match with the
-															// signal at the
-															// center of screen
+				// to adjust the
+				// annotation to
+				// match with the
+				// signal at the
+				// center of screen
 			}
 
 			// 4. convert JSONObject to JSON to String
@@ -628,8 +649,8 @@ public class MainActivity extends Activity {
 
 	void disconnectBT() throws IOException {
 		/* Reset the global variables */
-//		TextView tv = (TextView) findViewById(R.id.StatusTextBox);
-//		String ErrorText = "Disconnected from HxM!";
+		//		TextView tv = (TextView) findViewById(R.id.StatusTextBox);
+		//		String ErrorText = "Disconnected from HxM!";
 		//tv.setText(ErrorText);
 
 		/*
@@ -676,8 +697,8 @@ public class MainActivity extends Activity {
 		TextView tv1 = (TextView) findViewById(R.id.HRTextBox);
 		tv1.setText("000");
 
-//		tv1 = (TextView) findViewById(R.id.InstantSpeed);
-//		tv1.setText("0.0");
+		//		tv1 = (TextView) findViewById(R.id.InstantSpeed);
+		//		tv1.setText("0.0");
 
 		// tv1 = (EditText)findViewById(R.id.labelSkinTemp);
 		// tv1.setText("0.0");
@@ -689,8 +710,8 @@ public class MainActivity extends Activity {
 		// tv1.setText("0.0");
 		if (_bt.IsConnected()) {
 			_bt.start();
-//			TextView tv = (TextView) findViewById(R.id.StatusTextBox);
-//			String ErrorText = "Connected to HxM " + DeviceName;
+			//			TextView tv = (TextView) findViewById(R.id.StatusTextBox);
+			//			String ErrorText = "Connected to HxM " + DeviceName;
 			//tv.setText(ErrorText);
 
 			// Reset all the values to 0s
@@ -698,8 +719,8 @@ public class MainActivity extends Activity {
 			//image.startAnimation(pulseHeartAnim);
 
 		} else {
-//			TextView tv = (TextView) findViewById(R.id.StatusTextBox);
-//			String ErrorText = "Unable to Connect !";
+			//			TextView tv = (TextView) findViewById(R.id.StatusTextBox);
+			//			String ErrorText = "Unable to Connect !";
 			//tv.setText(ErrorText);
 		}
 	}
@@ -723,7 +744,7 @@ public class MainActivity extends Activity {
 					.toString());
 			Log.d("BTIntent",
 					b.get("android.bluetooth.device.extra.PAIRING_VARIANT")
-							.toString());
+					.toString());
 			try {
 				BluetoothDevice device = adapter.getRemoteDevice(b.get(
 						"android.bluetooth.device.extra.DEVICE").toString());
