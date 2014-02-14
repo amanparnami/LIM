@@ -8,8 +8,7 @@ import zephyr.android.HxMBT.*;
 
 public class HRMListener extends ConnectListenerImpl
 {
-	private Handler _OldHandler;
-	private Handler _aNewHandler; 
+	private Handler mMsgHandler; 
 	private int GP_MSG_ID = 0x20;
 	private int GP_HANDLER_ID = 0x20;
 	private int HR_SPD_DIST_PACKET =0x26;
@@ -17,12 +16,9 @@ public class HRMListener extends ConnectListenerImpl
 	private final int HEART_RATE = 0x100;
 	private final int INSTANT_SPEED = 0x101;
 	private HRSpeedDistPacketInfo HRSpeedDistPacket = new HRSpeedDistPacketInfo();
-	public HRMListener(Handler handler,Handler _NewHandler) {
+	public HRMListener(Handler handler) {
 		super(handler, null);
-		_OldHandler= handler;
-		_aNewHandler = _NewHandler;
-
-		// TODO Auto-generated constructor stub
+		mMsgHandler = handler;
 
 	}
 	public void Connected(ConnectedEvent<BTClient> eventArgs) {
@@ -49,20 +45,20 @@ public class HRMListener extends ConnectListenerImpl
 					
 					//***************Displaying the Heart Rate********************************
 					int HRate =  HRSpeedDistPacket.GetHeartRate(DataArray);
-					Message text1 = _aNewHandler.obtainMessage(HEART_RATE);
+					Message text1 = mMsgHandler.obtainMessage(HEART_RATE);
 					Bundle b1 = new Bundle();
 					b1.putString("HeartRate", String.valueOf(HRate));
 					text1.setData(b1);
-					_aNewHandler.sendMessage(text1);
+					mMsgHandler.sendMessage(text1);
 					//System.out.println("Heart Rate is "+ HRate);
 
 					//***************Displaying the Instant Speed********************************
 					double InstantSpeed = HRSpeedDistPacket.GetInstantSpeed(DataArray);
 					
-					text1 = _aNewHandler.obtainMessage(INSTANT_SPEED);
+					text1 = mMsgHandler.obtainMessage(INSTANT_SPEED);
 					b1.putString("InstantSpeed", String.valueOf(InstantSpeed));
 					text1.setData(b1);
-					_aNewHandler.sendMessage(text1);
+					mMsgHandler.sendMessage(text1);
 					//System.out.println("Instant Speed is "+ InstantSpeed);
 					
 				}

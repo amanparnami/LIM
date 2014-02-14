@@ -53,10 +53,11 @@ import android.widget.TextView;
 
 /**
  * TODO: 
- * (done) Reduce redundancy in variables used for Bluetooth connection.
- * (done) Merge the common parts of Bluetooth connection protocol for both sensors.
- * (done) Rename functions and variables to semantically appropriate names.
- * -  
+ * (done 2/13/14) Reduce redundancy in variables used for Bluetooth connection.
+ * (done 2/13/14) Merge the common parts of Bluetooth connection protocol for both sensors.
+ * (done 2/13/14) Rename functions and variables to semantically appropriate names.
+ * - Enable data transmission to server.
+ * - Enable annotation. 
  */
 
 /**
@@ -360,7 +361,7 @@ public class GlimMainActivity extends Activity {
 				//pairDevice(mHrmBtDevice);
 			} else {
 				mZephyrBtClient = new BTClient(mBtAdapter, hrmDeviceMacId);
-				mHrmListener = new HRMListener(mHrmMsgHandler, mHrmMsgHandler);
+				mHrmListener = new HRMListener(mHrmMsgHandler);
 				mZephyrBtClient.addConnectedEventListener(mHrmListener);
 			}
 			
@@ -526,11 +527,6 @@ public class GlimMainActivity extends Activity {
 	}
 
 	void disconnectBtHrmDevice() throws IOException {
-		/* Reset the global variables */
-		// TextView tv = (TextView) findViewById(R.id.StatusTextBox);
-		// String ErrorText = "Disconnected from HxM!";
-		// tv.setText(ErrorText);
-
 		/*
 		 * Stopping the animation
 		 */
