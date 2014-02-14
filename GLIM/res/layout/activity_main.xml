@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:background="@color/black"
     android:keepScreenOn="true"
-    tools:context=".MainActivity" >
+    tools:context=".GlimMainActivity" >
 
     <edu.gatech.ubicomp.glim.EDAWaveformView
         android:id="@+id/waveformView"
@@ -12,7 +12,7 @@
         android:layout_height="match_parent" />
 
     <TextView
-        android:id="@+id/label"
+        android:id="@+id/labelEdaValue"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|right"
@@ -81,7 +81,7 @@
             android:background="@color/yellow_dull" 
             android:orientation="horizontal" >
             <TextView
-            android:id="@+id/HRTextBox"
+            android:id="@+id/labelHrValue"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="30sp"
@@ -98,7 +98,7 @@
     </LinearLayout>
 
     <TextView
-        android:id="@+id/StatusTextBox"
+        android:id="@+id/msgStatusText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|left"

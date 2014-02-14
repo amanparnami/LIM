@@ -1,11 +1,9 @@
 package edu.gatech.ubicomp.glim ;
-import android.app.Activity;
-
 
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.widget.TextView;
+
 import zephyr.android.HxMBT.*;
 
 public class HRMListener extends ConnectListenerImpl
