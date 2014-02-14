@@ -134,7 +134,7 @@ public class GlimMainActivity extends Activity {
 			case MSG_WHAT_HEART_RATE:
 				String heartRateText = msg.getData().getString("HeartRate");
 				tv = (TextView) findViewById(R.id.labelHrValue);
-				System.out.println("Heart Rate Info is " + heartRateText);
+				//System.out.println("Heart Rate Info is " + heartRateText);
 				if (tv != null) {
 					tv.setText(heartRateText);
 					float currentHR = Float.parseFloat(heartRateText);
