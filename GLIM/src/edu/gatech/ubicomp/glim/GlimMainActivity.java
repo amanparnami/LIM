@@ -58,6 +58,7 @@ import android.widget.TextView;
  * (done 2/13/14) Reduce redundancy in variables used for Bluetooth connection.
  * (done 2/13/14) Merge the common parts of Bluetooth connection protocol for both sensors.
  * (done 2/13/14) Rename functions and variables to semantically appropriate names.
+ * - Create separate activities for initiating pairing HRM and EDA sensor to Glass.
  * - Enable data transmission to server.
  * - Enable annotation. 
  */
@@ -102,12 +103,12 @@ public class GlimMainActivity extends Activity {
 	public static final String BT_MAC_ADD_FOR_GLASS = "F8:8F:CA:24:82:48";
 	public static final String WIFI_MAC_ADD_FOR_GLASS = "f8:8f:ca:24:82:47";
 	public static final String BT_MAC_ADD_FOR_MIO_HRM = "C3:52:C1:79:7B:B5";
-	public static final String BT_MAC_ADD_FOR_ZEPHYR_HRM = "00:07:80:9D:8A:E8"; //"00:07:80:6D:7F:25"
+	public static final String BT_MAC_ADD_FOR_ZEPHYR_HRM = "00:07:80:6D:7F:25"; 
 	public static final String BT_MAC_ADD_FOR_NEXUS = "40:B0:FA:0C:E3:BD";
 
 	/** Tags used while making server requests. */
 	public static final String[] DATA_HEADER_TAGS = { "time", "z", "y", "x",
-			"battery", "temp", "eda", "event" };
+		"battery", "temp", "eda", "event" };
 	public static final String[] EDA_DATA_HEADER_TAGS = { "time", "eda" };
 	public static final String[] EDA_ANNOTATION_HEADER_TAGS = { "time" };
 
@@ -126,7 +127,7 @@ public class GlimMainActivity extends Activity {
 	private Animation mPulseHeartAnim;
 	private GestureDetector mGestureDetector;
 	private EDAWaveformView mWaveformView;
-	
+
 	private AudioManager mAudioManager;
 
 	/** Data listener related variables. */
@@ -153,7 +154,7 @@ public class GlimMainActivity extends Activity {
 						llActiveIndicator.setBackgroundResource(R.color.yellow_dull);
 						llHyperIndicator.setBackgroundResource(R.color.red_dull);
 					} else if (currentHR >= 90.0 && currentHR < 150.0) { // Active
-																			// condition
+						// condition
 						tv.setTextColor(Color.BLACK);
 						llRestIndicator.setBackgroundResource(R.color.green_dull);
 						llActiveIndicator.setBackgroundResource(R.color.yellow_bright);
@@ -186,7 +187,7 @@ public class GlimMainActivity extends Activity {
 
 		mEdaBtDeviceName = new String(); 
 		mHrmBtDeviceName = new String();
-		
+
 		mLabel = (TextView) findViewById(R.id.labelEdaValue);
 
 		mWaveformView = (EDAWaveformView) findViewById(R.id.waveformView);
@@ -194,16 +195,9 @@ public class GlimMainActivity extends Activity {
 		mEDABuffer = new ArrayList<String>();
 
 		mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-		
+
 		mGestureDetector = createGestureDetector(this);
-		
-		/*Sending a message to android that we are going to initiate a pairing request
-        IntentFilter filter = new IntentFilter("android.bluetooth.device.action.PAIRING_REQUEST");
-        Registering a new BTBroadcast receiver from the Main Activity context with pairing request event
-       this.getApplicationContext().registerReceiver(new BTPairingRequestReceiver(), filter);
-        // Registering the BTBondReceiver in the application that the status of the receiver has changed to Paired
-        IntentFilter filter2 = new IntentFilter("android.bluetooth.device.action.BOND_STATE_CHANGED");
-       this.getApplicationContext().registerReceiver(new BTBondReceiver(), filter2);*/
+
 		// mImageView = (ImageView) findViewById(R.id.heartBeatImage);
 		// mPulseHeartAnim = AnimationUtils.loadAnimation(this, R.anim.pulse);
 	}
@@ -214,12 +208,12 @@ public class GlimMainActivity extends Activity {
 		getMenuInflater().inflate(R.menu.main, menu);
 		return true;
 	}
-	
+
 	@Override
 	protected void onStop() {
 		// TODO Auto-generated method stub
 		super.onStop();
-		
+
 	}
 
 	private GestureDetector createGestureDetector(Context context) {
@@ -231,18 +225,17 @@ public class GlimMainActivity extends Activity {
 				if (gesture == Gesture.TAP) {
 					// do something on tap
 					// saveAnnotation();
+					openOptionsMenu();
 					return true;
 				} else if (gesture == Gesture.TWO_TAP) {
-					 mAudioManager.playSoundEffect(AudioManager.FX_KEY_CLICK);
+					mAudioManager.playSoundEffect(AudioManager.FX_KEY_CLICK);
 					// do something on two finger tap
 					if (!isConnected) {
 						try {
 							// Connect to Bluetooth devices
 							connectBtDevices();
-							
-							if(mEdaBtDevice.getBondState() == 12 && mHrmBtDevice.getBondState() == 12) {
-								isConnected = true;
-							}
+
+							isConnected = true;
 						} catch (IOException ex) {
 							//Set isConnected back to false so that we try again in next tap.
 							isConnected = false;
@@ -251,7 +244,7 @@ public class GlimMainActivity extends Activity {
 						// Disconnect Bluetooth
 						try {
 							disconnectBtDevices();
-							
+
 							isConnected = false;
 						} catch (IOException ex) {
 							isConnected = true;
@@ -298,9 +291,9 @@ public class GlimMainActivity extends Activity {
 		}
 		return false;
 	}
-	
-	
-/*	*//**
+
+
+	/*	*//**
 	 * Handle the tap event from the touchpad.
 	 *//*
 	@Override
@@ -310,6 +303,7 @@ public class GlimMainActivity extends Activity {
 		case KeyEvent.KEYCODE_DPAD_CENTER:
 		case KeyEvent.KEYCODE_ENTER:
 			// sendDataToServer(mEDABuffer);
+			openOptionsMenu();
 			return true;
 		case KeyEvent.KEYCODE_TAB:
 			// saveAnnotation();
@@ -318,13 +312,13 @@ public class GlimMainActivity extends Activity {
 			return super.onKeyDown(keyCode, event);
 		}
 	}*/
-	
+
 	/**
 	 * Create connection between Glass and other bluetooth devices.
 	 */
 	void connectBtDevices() throws IOException{
 		mBtAdapter = BluetoothAdapter.getDefaultAdapter();
-		
+
 		if (mBtAdapter != null) {
 			// If bluetooth is not enabled then do so.
 			if (!mBtAdapter.isEnabled()) {
@@ -336,7 +330,7 @@ public class GlimMainActivity extends Activity {
 			// Retrieve a list of paired devices
 			Set<BluetoothDevice> pairedDevices = mBtAdapter.getBondedDevices();
 			String edaDeviceMacId = null, hrmDeviceMacId = null;
-			
+
 			if(pairedDevices.size() > 0) {
 				// Check if the specific devices are paired already 
 				for(BluetoothDevice device : pairedDevices) {
@@ -354,66 +348,82 @@ public class GlimMainActivity extends Activity {
 					}
 				}
 			}
-			
+
 			// If EDA sensor is not paired already then do so
-			if(edaDeviceMacId == null) {
-				mEdaBtDevice = mBtAdapter.getRemoteDevice(BT_MAC_ADD_FOR_EDA_SENSOR);
-				mEdaBtDeviceName = mEdaBtDevice.getName();
-				pairDevice(mEdaBtDevice);
-				/*mBtSocket = mEdaBtDevice
-						.createRfcommSocketToServiceRecord(MY_UUID_FOR_NON_ANDROID_DEVICES);
-				mBtSocket.connect();*/
-			} else {
-				try {
-					mBtSocket = mEdaBtDevice
-							.createRfcommSocketToServiceRecord(MY_UUID_FOR_NON_ANDROID_DEVICES);
-					mBtSocket.connect();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					//e.printStackTrace();
-					System.err.println("Could not connect to EDA Sensor.");
-				}
-				// mOutputStream = mBtSocket.getOutputStream();
-				try {
-					mInputStream = mBtSocket.getInputStream();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					//e.printStackTrace();
-					System.err.println("Could not open an insput stream.");
-				}
-			}
-			
-			/*// If HRM is not paired already then do so
-			if(hrmDeviceMacId == null) {
-				mHrmBtDevice = mBtAdapter.getRemoteDevice(BT_MAC_ADD_FOR_ZEPHYR_HRM);
-				mHrmBtDeviceName = mHrmBtDevice.getName();
-				pairDevice(mHrmBtDevice);
-				
-				mZephyrBtClient = new BTClient(mBtAdapter, BT_MAC_ADD_FOR_ZEPHYR_HRM);
-				mHrmListener = new HRMListener(mHrmMsgHandler);
-				mZephyrBtClient.addConnectedEventListener(mHrmListener);
-			} else {
-				mZephyrBtClient = new BTClient(mBtAdapter, hrmDeviceMacId);
-				mHrmListener = new HRMListener(mHrmMsgHandler);
-				mZephyrBtClient.addConnectedEventListener(mHrmListener);
-			}*/
-			
+			connectBtEdaDevice(edaDeviceMacId);
+
+			// If HRM is not paired already then do so
+			connectBtHrmDevice(hrmDeviceMacId);
+
 			startListeningForData();
 		}
 	}
-	
+
+	/**
+	 * Initiate connection with EDA sensor
+	 * @param edaDeviceMacId
+	 * @throws IOException
+	 */
+	void connectBtEdaDevice(String edaDeviceMacId) throws IOException {
+		if(edaDeviceMacId == null) {
+			System.out.println("EDA device");
+			mEdaBtDevice = mBtAdapter.getRemoteDevice(BT_MAC_ADD_FOR_EDA_SENSOR);
+			mEdaBtDeviceName = mEdaBtDevice.getName();
+			pairDevice(mEdaBtDevice);
+		} 
+		try {
+
+			mBtSocket = mEdaBtDevice
+					.createRfcommSocketToServiceRecord(MY_UUID_FOR_NON_ANDROID_DEVICES);
+			mBtSocket.connect();
+		} catch (IOException e) {
+			//e.printStackTrace();
+			System.err.println("Could not connect to EDA Sensor.");
+		}
+
+		try {
+			mOutputStream = mBtSocket.getOutputStream();
+			mInputStream = mBtSocket.getInputStream();
+		} catch (IOException e) {
+			//e.printStackTrace();
+			System.err.println("Could not open an insput stream.");
+		}
+
+	}
+
+	/**
+	 * Initiates connection with HRM.
+	 * @param hrmDeviceMacId
+	 * @throws IOException
+	 */
+	void connectBtHrmDevice(String hrmDeviceMacId) throws IOException {
+		if(hrmDeviceMacId == null) {
+			System.out.println("HRM device");
+			mHrmBtDevice = mBtAdapter.getRemoteDevice(BT_MAC_ADD_FOR_ZEPHYR_HRM);
+			mHrmBtDeviceName = mHrmBtDevice.getName();
+			pairDevice(mHrmBtDevice);
+		}	
+		// Next line is needed before connect to avoid "service discovery failed" error
+		mBtAdapter.cancelDiscovery();
+		mZephyrBtClient = new BTClient(mBtAdapter, BT_MAC_ADD_FOR_ZEPHYR_HRM);
+		mHrmListener = new HRMListener(mHrmMsgHandler);
+		mZephyrBtClient.addConnectedEventListener(mHrmListener);
+	}
+
+
 	/**
 	 * Begin listening for data from sensors.
 	 */
 	void startListeningForData() {
-		//TODO: Find a way to check that both devices are connected before data is listened for.
-		// Start listening for HRM data
-		//listenForHrmData();
 		System.out.println("Listening for data..");
+
+		// Start listening for HRM data
+		listenForHrmData();
+
 		// Start listening for EDA data 
-		//listenForEdaData();
+		listenForEdaData();
 	}
-	
+
 	/**
 	 * Disconnect bluetooth connection between Glass and other devices.
 	 */
@@ -422,16 +432,14 @@ public class GlimMainActivity extends Activity {
 		try {
 			disconnectBtEdaDevice();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			//e.printStackTrace();
 			System.err.println("Error in closing connection to EDA Sensor.");
 		}
-		
+
 		// Stop listening for HRM data
 		try {
 			disconnectBtHrmDevice();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			//e.printStackTrace();
 			System.err.println("Error in closing connection to HRM.");
 		}
@@ -446,10 +454,10 @@ public class GlimMainActivity extends Activity {
 			mZephyrBtClient.start();
 		}
 	}
-	
+
 	/**
 	 * Listens for EDA data.
-	 * TODO: Clean this is function
+	 * TODO: Clean this function
 	 */
 	void listenForEdaData() {
 		final Handler handler = new Handler();
@@ -481,10 +489,7 @@ public class GlimMainActivity extends Activity {
 											.replaceAll("\\n", "").replaceAll(
 													"\\r", "");
 
-									// TODO Sometimes the next line throws an
-									// array index out of bounds exception.
-									// Apparently in some situation it receives
-									// just three comma separated values.
+									// TODO: Handle arrayindexoutofboundsexception when annotation is done by pressing button on Q sensor
 									final String edaSignal = data.split(",")[6];
 									final Long timestamp = System
 											.currentTimeMillis();
@@ -529,7 +534,7 @@ public class GlimMainActivity extends Activity {
 											}
 
 											mWaveformView
-													.updateEDADataSimple(fEdaSignal);
+											.updateEDADataSimple(fEdaSignal);
 											mLabel.setText(fEdaSignal
 													.toString());// data);
 										}
@@ -571,15 +576,17 @@ public class GlimMainActivity extends Activity {
 		 */
 		// mImageView.clearAnimation();
 
-		/* This disconnects listener from acting on received messages */
-		mZephyrBtClient.removeConnectedEventListener(mHrmListener);
 		/*
 		 * Close the communication with the device & throw an exception if
 		 * failure
 		 */
 		mZephyrBtClient.Close();
+
+		/* This disconnects listener from acting on received messages */
+		mZephyrBtClient.removeConnectedEventListener(mHrmListener);
+
 	}
-	
+
 	private static String convertArraytoCSV(ArrayList<String> list) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("{");
@@ -768,31 +775,15 @@ public class GlimMainActivity extends Activity {
 		try {
 
 			Log.d(TAG, "Start Pairing...");
-
-			
-
 			Method m = device.getClass().getMethod("createBond", (Class[])null);
 			m.invoke(device, (Object[])null);
-
-			/*int bondState = device.getBondState();
-			if (bondState == BluetoothDevice.BOND_NONE || bondState == BluetoothDevice.BOND_BONDING)
-			{
-			    waitingForBonding = true; // Class variable used later in the broadcast receiver
-
-			    // Also...I have the whole bluetooth session running on a thread.  This was a key point for me.  If the bond state is not BOND_BONDED, I wait here.  Then see the snippets below
-			    synchronized(this)
-			    {
-			        wait();
-			    }
-			}*/
-
-			//Log.d(TAG, "Pairing finished.");
+			Log.d(TAG, "Pairing finished.");
 		} catch (Exception e) {
 			Log.e(TAG, e.getMessage());
 		}
 	}
 
 
-	
+
 
 }
