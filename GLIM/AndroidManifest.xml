@@ -16,7 +16,7 @@
         <activity
             android:name="edu.gatech.ubicomp.glim.GlimMainActivity"
             android:label="@string/app_name"
-            android:icon="@drawable/ic_launcher" >
+            android:icon="@drawable/glim_icon" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -28,9 +28,14 @@
             <meta-data android:name="com.google.android.glass.VoiceTrigger"
                        android:resource="@xml/voice_trigger" />
         </activity>
-        <receiver android:name="edu.gatech.ubicomp.glim.BTBroadcastReceiver">
+        <receiver android:name="edu.gatech.ubicomp.glim.BTPairingRequestReceiver">
         <intent-filter>
             <action android:name="android.bluetooth.device.action.PAIRING_REQUEST" />
+        </intent-filter>
+    </receiver>
+    <receiver android:name="edu.gatech.ubicomp.glim.BTBondReceiver">
+        <intent-filter>
+            <action android:name="android.bluetooth.device.action.BOND_STATE_CHANGED" />
         </intent-filter>
     </receiver>
     </application>
