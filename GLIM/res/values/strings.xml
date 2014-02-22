@@ -7,4 +7,6 @@
 	<string name="labelHeartRate">Heart Rate</string>
     <string name="labelInstantSpeed">Instant Speed</string>
     <string name="labelStatusMsg">Status Message</string>
+    <string name="glass_voice_trigger">Run GLIM</string>
+    <string name="glass_voice_prompt">tell me what\'s on your mind</string>
 </resources>
