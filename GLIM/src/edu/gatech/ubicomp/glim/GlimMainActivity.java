@@ -493,50 +493,42 @@ public class GlimMainActivity extends Activity {
 									final String edaSignal = data.split(",")[6];
 									final Long timestamp = System
 											.currentTimeMillis();
-									final Double dEdaSignal = Double
-											.parseDouble(edaSignal);// *1000;
 									final Float fEdaSignal = Float
 											.parseFloat(edaSignal);
-									final Integer iEdaSignal = dEdaSignal
-											.intValue();
 									mReadBufferPos = 0;
+
+									if (mBufferSize < MAX_BUFFER_SIZE) {
+										mEDABuffer.add(mBufferSize,
+												timestamp + ","
+														+ edaSignal);
+										mBufferSize++;
+									} else if (mBufferSize == MAX_BUFFER_SIZE) {
+										// We make a copy of mEDABuffer
+										// before starting a request to
+										// server because
+										// by the time the server
+										// prepares it's request the
+										// actual copy of mEDABuffer has
+										// changed.
+										// Thus we now use the new copy
+										// we just created that
+										// preserves all values from
+										// original buffer.
+										String[] tempBufferCopy = new String[MAX_BUFFER_SIZE];
+										System.arraycopy(mEDABuffer.toArray(), 0, tempBufferCopy, 0, MAX_BUFFER_SIZE);
+										// sendDataToServer(tempBufferCopy);
+										mEDABuffer.clear();
+										mEDABuffer.add(0, timestamp
+												+ "," + edaSignal);
+										mBufferSize = 1;
+									}
 
 									handler.post(new Runnable() {
 										public void run() {
-											if (mBufferSize < MAX_BUFFER_SIZE) {
-												mEDABuffer.add(mBufferSize,
-														timestamp + ","
-																+ edaSignal);
-												mBufferSize++;
-											} else if (mBufferSize == MAX_BUFFER_SIZE) {
-												// We make a copy of mEDABuffer
-												// before starting a request to
-												// server because
-												// by the time the server
-												// prepares it's request the
-												// actual copy of mEDABuffer has
-												// changed.
-												// Thus we now use the new copy
-												// we just created that
-												// preserves all values from
-												// original buffer.
-												ArrayList<String> tempBufferCopy = new ArrayList<String>(
-														MAX_BUFFER_SIZE);
-												for (String s : mEDABuffer) {
-													tempBufferCopy.add(s);
-												}
-
-												// sendDataToServer(tempBufferCopy);
-												mEDABuffer.clear();
-												mEDABuffer.add(0, timestamp
-														+ "," + edaSignal);
-												mBufferSize = 1;
-											}
-
 											mWaveformView
 											.updateEDADataSimple(fEdaSignal);
 											mLabel.setText(fEdaSignal
-													.toString());// data);
+													.toString());
 										}
 									});
 								} else {
