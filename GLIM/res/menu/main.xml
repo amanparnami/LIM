@@ -1,9 +1,12 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
 
     <item
-        android:id="@+id/action_settings"
-        android:orderInCategory="100"
-        android:showAsAction="never"
-        android:title="@string/action_settings"/>
+        android:id="@+id/mi_connect_eda"
+        android:icon="@drawable/glim_icon"
+        android:title="@string/connect_eda"/>
+    <item
+        android:id="@+id/mi_connect_hrm"
+        android:icon="@drawable/heart"
+        android:title="@string/connect_hrm"/>
 
 </menu>
