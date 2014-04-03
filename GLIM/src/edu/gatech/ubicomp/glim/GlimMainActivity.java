@@ -99,11 +99,11 @@ public class GlimMainActivity extends Activity {
 			.fromString("00001101-0000-1000-8000-00805f9b34fb");
 
 	/** MAC address for all components. */
-	public static final String BT_MAC_ADD_FOR_EDA_SENSOR = "00:06:66:0A:50:D5";
-	public static final String BT_MAC_ADD_FOR_GLASS = "F8:8F:CA:24:82:48";
+	public static final String BT_MAC_ADD_FOR_EDA_SENSOR = "00:06:66:0A:50:04";//Ivan's Q Sensor "00:06:66:0A:50:04";//Aman's Q Sensor "00:06:66:0A:50:D5";
+	public static final String BT_MAC_ADD_FOR_GLASS = "F8:8F:CA:24:BF:32";//Ivan's Glass"F8:8F:CA:24:BF:32"; //Aman's Glass"F8:8F:CA:24:82:48";
 	public static final String WIFI_MAC_ADD_FOR_GLASS = "f8:8f:ca:24:82:47";
 	public static final String BT_MAC_ADD_FOR_MIO_HRM = "C3:52:C1:79:7B:B5";
-	public static final String BT_MAC_ADD_FOR_ZEPHYR_HRM = "00:07:80:6D:7F:25"; 
+	public static final String BT_MAC_ADD_FOR_ZEPHYR_HRM = "00:07:80:6E:A7:F2";//Ivan's HRM "00:07:80:6E:A7:F2"; //Aman's HRM "00:07:80:6D:7F:25"; 
 	public static final String BT_MAC_ADD_FOR_NEXUS = "40:B0:FA:0C:E3:BD";
 
 	/** Tags used while making server requests. */
@@ -768,6 +768,8 @@ public class GlimMainActivity extends Activity {
 
 			Log.d(TAG, "Start Pairing...");
 			Method m = device.getClass().getMethod("createBond", (Class[])null);
+			device.getClass().getMethod("setPairingConfirmation", boolean.class).invoke(device, true);
+			device.getClass().getMethod("cancelPairingUserInput", boolean.class).invoke(device);
 			m.invoke(device, (Object[])null);
 			Log.d(TAG, "Pairing finished.");
 		} catch (Exception e) {
