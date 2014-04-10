@@ -11,4 +11,6 @@
     <string name="glass_voice_prompt">tell me what\'s on your mind</string>
     <string name="connect_eda">Connect EDA</string>
     <string name="connect_hrm">Connect HRM</string>
+    <string name="start_instructions">Tap with two fingers</string>
+    <string name="wait_instructions">Waiting to connect...</string>
 </resources>

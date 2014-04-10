@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Set;
 import java.util.UUID;
 
@@ -45,9 +46,11 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup.MarginLayoutParams;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Switch;
@@ -61,6 +64,10 @@ import android.widget.TextView;
  * - Create separate activities for initiating pairing HRM and EDA sensor to Glass.
  * - Enable data transmission to server.
  * - Enable annotation. 
+ * - Allow multiple individual connection attempts to HRM and EDA 
+ * 	Look at	http://stackoverflow.com/questions/4715865/how-to-programmatically-tell-if-a-bluetooth-device-is-connected-android-2-2
+ * (done 4/7/14) Show instructions about "double tap" on start
+ * Look at http://stackoverflow.com/questions/10216937/how-do-i-create-a-help-overlay-like-you-see-in-a-few-android-apps-and-ics
  */
 
 /**
@@ -90,7 +97,20 @@ public class GlimMainActivity extends Activity {
 	private int mReadBufferPos;
 	private int mBufferSize = 0;
 	private int mCounter = 0;
+	
+	/** Factor sued to convert from dp into actual number of pixels*/
+	float scale;
 
+	public final static double HR_PERCENTAGE_LEVELS = 10; 
+//	public final static double IVAN_EDA_REST = ;
+//	public final static double IVAN_EDA_REST = ;
+	
+	public final static float BASE_HR_VALUE = 80;
+	public final static float BASE_EDA_VALUE = 1.5f;
+	
+	/** Minimum percentage by which either signal has to change to jump a level*/
+	public final static float MIN_PERCENTAGE_LEVEL_SHIFT = 10; 
+	
 	/** UUIDs for connecting with other devices. */
 	private static final UUID MY_UUID_FOR_ANDROID_DEVICES = UUID
 			.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");
@@ -120,6 +140,8 @@ public class GlimMainActivity extends Activity {
 	public static final int MSG_WHAT_HEART_RATE = 0x100;
 	public static final int MSG_WHAT_INSTANT_SPEED = 0x101;
 
+	public HashMap<String, Float> mapHrEda;
+	
 	/** UI related variables. */
 	private TextView mLabel;
 	private EditText mTextbox;
@@ -127,8 +149,17 @@ public class GlimMainActivity extends Activity {
 	private Animation mPulseHeartAnim;
 	private GestureDetector mGestureDetector;
 	private EDAWaveformView mWaveformView;
-
+	private FrameLayout mAbsoluteFrameLayout;
+	private View mInstructionOverlay;
+	private View mMainView;
+	
 	private AudioManager mAudioManager;
+	LinearLayout llRestIndicator = null;
+	LinearLayout llActiveIndicator = null;
+	LinearLayout llHyperIndicator = null;
+	LinearLayout llSignalIndicator = null;
+	TextView hrValueTV = null;
+	TextView instantSpeedTV = null;
 
 	/** Data listener related variables. */
 	volatile boolean stopWorker;
@@ -136,68 +167,230 @@ public class GlimMainActivity extends Activity {
 	Thread mEdaSensorListenerThread;
 	final Handler mHrmMsgHandler = new Handler() {
 		public void handleMessage(Message msg) {
-			TextView tv;
 			switch (msg.what) {
 			case MSG_WHAT_HEART_RATE:
 				String heartRateText = msg.getData().getString("HeartRate");
-				tv = (TextView) findViewById(R.id.labelHrValue);
 				//System.out.println("Heart Rate Info is " + heartRateText);
-				if (tv != null) {
-					tv.setText(heartRateText);
+				if (hrValueTV != null) {
+					hrValueTV.setText(heartRateText);
 					float currentHR = Float.parseFloat(heartRateText);
-					LinearLayout llRestIndicator = ((LinearLayout) findViewById(R.id.hrIndicatorRest));
-					LinearLayout llActiveIndicator = ((LinearLayout) findViewById(R.id.hrIndicatorActive));
-					LinearLayout llHyperIndicator = ((LinearLayout) findViewById(R.id.hrIndicatorHyper));
-					if (currentHR < 90.0) { // Rest condition
-						tv.setTextColor(Color.WHITE);
-						llRestIndicator.setBackgroundResource(R.color.green_bright);
-						llActiveIndicator.setBackgroundResource(R.color.yellow_dull);
-						llHyperIndicator.setBackgroundResource(R.color.red_dull);
-					} else if (currentHR >= 90.0 && currentHR < 150.0) { // Active
-						// condition
-						tv.setTextColor(Color.BLACK);
-						llRestIndicator.setBackgroundResource(R.color.green_dull);
-						llActiveIndicator.setBackgroundResource(R.color.yellow_bright);
-						llHyperIndicator.setBackgroundResource(R.color.red_dull);
-					} else { // Hyper condition
-						tv.setTextColor(Color.WHITE);
-						llRestIndicator.setBackgroundResource(R.color.green_dull);
-						llActiveIndicator.setBackgroundResource(R.color.yellow_dull);
-						llHyperIndicator.setBackgroundResource(R.color.red_bright);
-					}
+					mapHrEda.put("HR", currentHR);
+					//updateHeartRateBand(currentHR);
+					Log.d("Heart Rate",Float.toString(currentHR));
+					updateBand();
 				}
 				break;
 			case MSG_WHAT_INSTANT_SPEED:
 				String InstantSpeedtext = msg.getData().getString(
 						"InstantSpeed");
-				tv = (TextView) findViewById(R.id.InstantSpeed);
-				if (tv != null) {
-					tv.setText(InstantSpeedtext);
+				
+				if (instantSpeedTV != null) {
+					instantSpeedTV.setText(InstantSpeedtext);
 				}
 				break;
 			}
 		}
 	};
 
+	public void updateHeartRateBand(float heartRateValue) {
+		if (heartRateValue < 65.0) { // Rest condition
+			
+			llRestIndicator.setBackgroundResource(R.color.green_bright);
+			llRestIndicator.getLayoutParams().width = (int)(280*scale +0.5f);
+			llActiveIndicator.setBackgroundResource(R.color.yellow_dull);
+			llActiveIndicator.getLayoutParams().width = (int)(70*scale +0.5f);
+			llHyperIndicator.setBackgroundResource(R.color.red_dull);
+			llHyperIndicator.getLayoutParams().width = (int)(70*scale +0.5f);
+			MarginLayoutParams params=(MarginLayoutParams)hrValueTV.getLayoutParams();
+			params.leftMargin=(int)(140*scale +0.5f);
+			//here 100 means 100px,not 80% of the width of the parent view
+			//you may need a calculation to convert the percentage to pixels. 
+			hrValueTV.setTextColor(Color.WHITE);
+			hrValueTV.setLayoutParams(params);
+		} else if (heartRateValue >= 65.0 && heartRateValue < 70.0) { // Active
+			// condition
+			
+			llRestIndicator.setBackgroundResource(R.color.green_dull);
+			llRestIndicator.getLayoutParams().width = (int)(70*scale +0.5f);
+			llActiveIndicator.setBackgroundResource(R.color.yellow_bright);
+			llActiveIndicator.getLayoutParams().width = (int)(280*scale +0.5f);
+			llHyperIndicator.setBackgroundResource(R.color.red_dull);
+			llHyperIndicator.getLayoutParams().width = (int)(70*scale +0.5f);
+			MarginLayoutParams params=(MarginLayoutParams)hrValueTV.getLayoutParams();
+			params.leftMargin=(int)(210*scale +0.5f);
+			//here 100 means 100px,not 80% of the width of the parent view
+			//you may need a calculation to convert the percentage to pixels. 
+			hrValueTV.setTextColor(Color.BLACK);
+			hrValueTV.setLayoutParams(params);
+		} else { // Hyper condition
+			
+			llRestIndicator.setBackgroundResource(R.color.green_dull);
+			llRestIndicator.getLayoutParams().width = (int)(70*scale +0.5f);
+			llActiveIndicator.setBackgroundResource(R.color.yellow_dull);
+			llActiveIndicator.getLayoutParams().width = (int)(70*scale +0.5f);
+			llHyperIndicator.setBackgroundResource(R.color.red_bright);
+			llHyperIndicator.getLayoutParams().width = (int)(280*scale +0.5f);
+			MarginLayoutParams params=(MarginLayoutParams)hrValueTV.getLayoutParams();
+			params.leftMargin=(int)(280*scale +0.5f);
+			//here 100 means 100px,not 80% of the width of the parent view
+			//you may need a calculation to convert the percentage to pixels. 
+			hrValueTV.setTextColor(Color.WHITE);
+			hrValueTV.setLayoutParams(params);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param heartRateValue
+	 */
+	public void updateBand() {
+		int shiftValue = totalShift();
+		MarginLayoutParams params=(MarginLayoutParams)hrValueTV.getLayoutParams();
+		Log.d("Shift", Integer.toString(shiftValue));
+		switch(shiftValue) {
+		case 0:
+		case 1:// Rest condition
+//			llRestIndicator.setBackgroundResource(R.color.green_bright);
+//			llRestIndicator.getLayoutParams().width = (int)(280*scale +0.5f);
+//			llActiveIndicator.setBackgroundResource(R.color.yellow_dull);
+//			llActiveIndicator.getLayoutParams().width = (int)(70*scale +0.5f);
+//			llHyperIndicator.setBackgroundResource(R.color.red_dull);
+//			llHyperIndicator.getLayoutParams().width = (int)(70*scale +0.5f);
+			llSignalIndicator.setBackgroundResource(R.color.blue_bright);
+			llSignalIndicator.getLayoutParams().width = (int)(180*scale +0.5f);
+//			params.leftMargin=(int)(140*scale +0.5f);
+//			hrValueTV.setLayoutParams(params);
+			//here 100 means 100px,not 80% of the width of the parent view
+			//you may need a calculation to convert the percentage to pixels. 
+			hrValueTV.setTextColor(Color.WHITE);
+			
+			break;
+		case 2:
+		case 3:// Active condition
+			llSignalIndicator.setBackgroundResource(R.color.green_bright);
+			llSignalIndicator.getLayoutParams().width = (int)(220*scale +0.5f);
+//			llRestIndicator.setBackgroundResource(R.color.green_dull);
+//			llRestIndicator.getLayoutParams().width = (int)(70*scale +0.5f);
+//			llActiveIndicator.setBackgroundResource(R.color.yellow_bright);
+//			llActiveIndicator.getLayoutParams().width = (int)(280*scale +0.5f);
+//			llHyperIndicator.setBackgroundResource(R.color.red_dull);
+//			llHyperIndicator.getLayoutParams().width = (int)(70*scale +0.5f);
+//			params.leftMargin=(int)(210*scale +0.5f);
+//			hrValueTV.setLayoutParams(params);
+			//here 100 means 100px,not 80% of the width of the parent view
+			//you may need a calculation to convert the percentage to pixels. 
+			hrValueTV.setTextColor(Color.WHITE);
+			
+			break;
+		case 4:
+		case 5: // Hyper Active condition
+			llSignalIndicator.setBackgroundResource(R.color.yellow_bright);
+			llSignalIndicator.getLayoutParams().width = (int)(260*scale +0.5f);
+//			llRestIndicator.setBackgroundResource(R.color.green_dull);
+//			llRestIndicator.getLayoutParams().width = (int)(70*scale +0.5f);
+//			llActiveIndicator.setBackgroundResource(R.color.yellow_dull);
+//			llActiveIndicator.getLayoutParams().width = (int)(70*scale +0.5f);
+//			llHyperIndicator.setBackgroundResource(R.color.red_bright);
+//			llHyperIndicator.getLayoutParams().width = (int)(280*scale +0.5f);
+//			params.leftMargin=(int)(280*scale +0.5f);
+//			hrValueTV.setLayoutParams(params);
+			//here 100 means 100px,not 80% of the width of the parent view
+			//you may need a calculation to convert the percentage to pixels. 
+			hrValueTV.setTextColor(Color.WHITE);
+			
+			break;
+		case 6:
+		case 7:
+			llSignalIndicator.setBackgroundResource(R.color.orange_bright);
+			llSignalIndicator.getLayoutParams().width = (int)(300*scale +0.5f);
+//			llRestIndicator.setBackgroundResource(R.color.green_dull);
+//			llRestIndicator.getLayoutParams().width = (int)(70*scale +0.5f);
+//			llActiveIndicator.setBackgroundResource(R.color.yellow_dull);
+//			llActiveIndicator.getLayoutParams().width = (int)(70*scale +0.5f);
+//			llHyperIndicator.setBackgroundResource(R.color.red_bright);
+//			llHyperIndicator.getLayoutParams().width = (int)(280*scale +0.5f);
+//			params.leftMargin=(int)(280*scale +0.5f);
+//			hrValueTV.setLayoutParams(params);
+			//here 100 means 100px,not 80% of the width of the parent view
+			//you may need a calculation to convert the percentage to pixels. 
+			hrValueTV.setTextColor(Color.WHITE);
+			
+			break;
+		default: // Stay in hyper
+			llSignalIndicator.setBackgroundResource(R.color.red_bright);
+			llSignalIndicator.getLayoutParams().width = (int)(360*scale +0.5f);
+//			llRestIndicator.setBackgroundResource(R.color.green_dull);
+//			llRestIndicator.getLayoutParams().width = (int)(70*scale +0.5f);
+//			llActiveIndicator.setBackgroundResource(R.color.yellow_dull);
+//			llActiveIndicator.getLayoutParams().width = (int)(70*scale +0.5f);
+//			llHyperIndicator.setBackgroundResource(R.color.red_bright);
+//			llHyperIndicator.getLayoutParams().width = (int)(280*scale +0.5f);
+//			params.leftMargin=(int)(280*scale +0.5f);
+//			hrValueTV.setLayoutParams(params);
+			//here 100 means 100px,not 80% of the width of the parent view
+			//you may need a calculation to convert the percentage to pixels. 
+			hrValueTV.setTextColor(Color.WHITE);
+			
+			break;
+		}
+	}
 
+	/**
+	 * Calculating the total shift in band based on percentage increase in both EDA and HR values from base levels.
+	 * Note that either one of them can compensate for the other. Also we are interest in 10% increase only.
+	 * @return
+	 */
+	public int totalShift() {
+		float edaValue = mapHrEda.get("EDA");
+		float hrValue = mapHrEda.get("HR");
+		
+		//TODO Handle cases when the value is negative and remove Math.abs
+		float percentageIncrEDA = Math.abs(((edaValue-BASE_EDA_VALUE)/BASE_EDA_VALUE)*100); 
+		float percentageIncrHR = Math.abs(((hrValue-BASE_HR_VALUE)/BASE_HR_VALUE)*100);
+		
+		int shiftEDA = (int) (percentageIncrEDA/MIN_PERCENTAGE_LEVEL_SHIFT);
+		int shiftHR = (int) (percentageIncrHR/MIN_PERCENTAGE_LEVEL_SHIFT);
+		
+		return shiftEDA+shiftHR;
+	}
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_main);
+		mAbsoluteFrameLayout = new FrameLayout(this.getBaseContext());
+		setContentView(mAbsoluteFrameLayout);
+		//setContentView(R.layout.activity_main);
+
+		mMainView = getLayoutInflater().inflate(R.layout.activity_main, mAbsoluteFrameLayout, false);
+		mInstructionOverlay = getLayoutInflater().inflate(R.layout.instruction_view, mAbsoluteFrameLayout, false);
+		mAbsoluteFrameLayout.addView(mMainView);
+		mAbsoluteFrameLayout.addView(mInstructionOverlay);
 
 		mEdaBtDeviceName = new String(); 
 		mHrmBtDeviceName = new String();
 
 		mLabel = (TextView) findViewById(R.id.labelEdaValue);
 
-		mWaveformView = (EDAWaveformView) findViewById(R.id.waveformView);
+		mapHrEda = new HashMap<String, Float>();
+		mapHrEda.put("EDA", BASE_EDA_VALUE);
+		mapHrEda.put("HR", BASE_HR_VALUE);
+		
+		//mWaveformView = (EDAWaveformView) findViewById(R.id.waveformView);
 		mBufferSize = 0;
 		mEDABuffer = new ArrayList<String>();
+		
+		scale = this.getBaseContext().getResources().getDisplayMetrics().density;
 
 		mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
 		mGestureDetector = createGestureDetector(this);
-
+		
+		llRestIndicator = ((LinearLayout) findViewById(R.id.hrIndicatorRest));
+		llActiveIndicator = ((LinearLayout) findViewById(R.id.hrIndicatorActive));
+		llHyperIndicator = ((LinearLayout) findViewById(R.id.hrIndicatorHyper));
+		llSignalIndicator = ((LinearLayout) findViewById(R.id.signalIndicator));
+		hrValueTV = (TextView) findViewById(R.id.labelHrValue);
+//		instantSpeedTV = (TextView) findViewById(R.id.InstantSpeed);
 		// mImageView = (ImageView) findViewById(R.id.heartBeatImage);
 		// mPulseHeartAnim = AnimationUtils.loadAnimation(this, R.anim.pulse);
 	}
@@ -224,10 +417,13 @@ public class GlimMainActivity extends Activity {
 			public boolean onGesture(Gesture gesture) {
 				if (gesture == Gesture.TAP) {
 					// do something on tap
-					// saveAnnotation();
+					
 					openOptionsMenu();
 					return true;
 				} else if (gesture == Gesture.TWO_TAP) {
+					//FIXME Doesn't immediately removes the view.
+					//TODO Add an animation to cover up for the delay in removing the text.
+					mAbsoluteFrameLayout.removeView(mInstructionOverlay);
 					mAudioManager.playSoundEffect(AudioManager.FX_KEY_CLICK);
 					// do something on two finger tap
 					if (!isConnected) {
@@ -244,7 +440,7 @@ public class GlimMainActivity extends Activity {
 						// Disconnect Bluetooth
 						try {
 							disconnectBtDevices();
-
+							mAbsoluteFrameLayout.addView(mInstructionOverlay);
 							isConnected = false;
 						} catch (IOException ex) {
 							isConnected = true;
@@ -252,6 +448,8 @@ public class GlimMainActivity extends Activity {
 
 					}
 					return true;
+				} else if (gesture == Gesture.THREE_TAP) {
+					// saveAnnotation();
 				} else if (gesture == Gesture.SWIPE_RIGHT) {
 					// do something on right (forward) swipe
 					return true;
@@ -335,14 +533,14 @@ public class GlimMainActivity extends Activity {
 				// Check if the specific devices are paired already 
 				for(BluetoothDevice device : pairedDevices) {
 					if(device.getName().contains("Affectiva")) {
-						System.out.println("Affectiva device found");
 						edaDeviceMacId = device.getAddress();
+						System.out.println("Paired EDA device found "+ edaDeviceMacId);
 						mEdaBtDevice = device;
 						mEdaBtDeviceName = mEdaBtDevice.getName();
 					}
 					if(device.getName().contains("HXM")){
 						hrmDeviceMacId = device.getAddress();
-						System.out.println("HXM device found "+hrmDeviceMacId);
+						System.out.println("Paired HRM device found "+hrmDeviceMacId);
 						mHrmBtDevice = device;
 						mHrmBtDeviceName = mHrmBtDevice.getName();
 					}
@@ -409,7 +607,6 @@ public class GlimMainActivity extends Activity {
 		mHrmListener = new HRMListener(mHrmMsgHandler);
 		mZephyrBtClient.addConnectedEventListener(mHrmListener);
 	}
-
 
 	/**
 	 * Begin listening for data from sensors.
@@ -516,21 +713,30 @@ public class GlimMainActivity extends Activity {
 										// original buffer.
 										String[] tempBufferCopy = new String[MAX_BUFFER_SIZE];
 										System.arraycopy(mEDABuffer.toArray(), 0, tempBufferCopy, 0, MAX_BUFFER_SIZE);
-										// sendDataToServer(tempBufferCopy);
+										//sendDataToServer(tempBufferCopy);
 										mEDABuffer.clear();
 										mEDABuffer.add(0, timestamp
 												+ "," + edaSignal);
 										mBufferSize = 1;
+										Log.d("EDA", Float.toString(fEdaSignal));
 									}
 
+//									handler.post(new Runnable() {
+//										public void run() {
+//											mWaveformView
+//											.updateEDADataSimple(fEdaSignal);
+//											mLabel.setText(fEdaSignal
+//													.toString());
+//										}
+//									});
 									handler.post(new Runnable() {
-										public void run() {
-											mWaveformView
-											.updateEDADataSimple(fEdaSignal);
-											mLabel.setText(fEdaSignal
-													.toString());
-										}
-									});
+									public void run() {
+										mapHrEda.put("EDA", fEdaSignal);
+										updateBand();
+										mLabel.setText(fEdaSignal
+												.toString());
+									}
+								});
 								} else {
 									mReadBuffer[mReadBufferPos++] = b;
 								}
@@ -579,7 +785,7 @@ public class GlimMainActivity extends Activity {
 
 	}
 
-	private static String convertArraytoCSV(ArrayList<String> list) {
+	private static String convertArraytoCSV(String[] list) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("{");
 		int index = 0;
@@ -607,7 +813,7 @@ public class GlimMainActivity extends Activity {
 	/*
 	 * Sends buffered data to server in JSON format
 	 */
-	private void sendDataToServer(ArrayList<String> list) {
+	private void sendDataToServer(String[] list) {
 		// TODO
 		// 1. get buffered data and make a copy (otherwise the data might change
 		// while the server request is processed) - done
@@ -629,7 +835,7 @@ public class GlimMainActivity extends Activity {
 		@Override
 		protected String doInBackground(Object... args) {
 
-			return dataPOST((String) args[0], (ArrayList<String>) args[1],
+			return dataPOST((String) args[0], (String[]) args[1],
 					(String) args[2]);
 
 		}
@@ -659,7 +865,7 @@ public class GlimMainActivity extends Activity {
 			return false;
 	}
 
-	public static String dataPOST(String url, ArrayList<String> list,
+	public static String dataPOST(String url, String[] list,
 			String mode) {
 		InputStream inputStream = null;
 		String result = "";

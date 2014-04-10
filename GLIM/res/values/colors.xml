@@ -7,4 +7,8 @@
     <color name="yellow_bright">#ffddbb11</color>
     <color name="red_dull">#22cc3333</color>
     <color name="red_bright">#ffcc3333</color>
+    <color name="blue_dull">#2234a7ff</color>
+    <color name="blue_bright">#ff34a7ff</color>
+    <color name="orange_dull">#22ccaa33</color>
+    <color name="orange_bright">#ffccaa33</color>
 </resources>
