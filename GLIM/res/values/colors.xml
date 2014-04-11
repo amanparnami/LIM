@@ -9,6 +9,6 @@
     <color name="red_bright">#ffcc3333</color>
     <color name="blue_dull">#2234a7ff</color>
     <color name="blue_bright">#ff34a7ff</color>
-    <color name="orange_dull">#22ccaa33</color>
-    <color name="orange_bright">#ffccaa33</color>
+    <color name="orange_dull">#22ffa500</color>
+    <color name="orange_bright">#ffffa500</color>
 </resources>
