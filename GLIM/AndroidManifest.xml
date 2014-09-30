@@ -5,39 +5,43 @@
     android:versionName="1.0" >
 
     <uses-sdk
-        android:minSdkVersion="15"
-        android:targetSdkVersion="15" />
-<uses-permission android:name="android.permission.BLUETOOTH" />
- <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
- 
+        android:minSdkVersion="19"
+        android:targetSdkVersion="19" />
+
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+
     <application
         android:allowBackup="true"
-        android:label="@string/app_name">
+        android:label="@string/app_name" >
         <activity
             android:name="edu.gatech.ubicomp.glim.GlimMainActivity"
-            android:label="@string/app_name"
-            android:icon="@drawable/glim_icon" >
+            android:icon="@drawable/glim_icon"
+            android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <intent-filter>
-                <action
-                    android:name="com.google.android.glass.action.VOICE_TRIGGER" />
+                <action android:name="com.google.android.glass.action.VOICE_TRIGGER" />
             </intent-filter>
-            <meta-data android:name="com.google.android.glass.VoiceTrigger"
-                       android:resource="@xml/voice_trigger" />
+
+            <meta-data
+                android:name="com.google.android.glass.VoiceTrigger"
+                android:resource="@xml/voice_trigger" />
         </activity>
-        <receiver android:name="edu.gatech.ubicomp.glim.BTPairingRequestReceiver">
-        <intent-filter>
-            <action android:name="android.bluetooth.device.action.PAIRING_REQUEST" />
-        </intent-filter>
-    </receiver>
-    <receiver android:name="edu.gatech.ubicomp.glim.BTBondReceiver">
-        <intent-filter>
-            <action android:name="android.bluetooth.device.action.BOND_STATE_CHANGED" />
-        </intent-filter>
-    </receiver>
+
+        <receiver android:name="edu.gatech.ubicomp.glim.BTPairingRequestReceiver" >
+            <intent-filter>
+                <action android:name="android.bluetooth.device.action.PAIRING_REQUEST" />
+            </intent-filter>
+        </receiver>
+        <receiver android:name="edu.gatech.ubicomp.glim.BTBondReceiver" >
+            <intent-filter>
+                <action android:name="android.bluetooth.device.action.BOND_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

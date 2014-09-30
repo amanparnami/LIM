@@ -72,6 +72,11 @@ import android.widget.TextView;
  * Look at http://stackoverflow.com/questions/10216937/how-do-i-create-a-help-overlay-like-you-see-in-a-few-android-apps-and-ics
  * - Check if heart rate variability could be derived from Zephyr HxM
  * Look at http://www.zephyranywhere.com/zephyr-labs/development-tools/hxm-bt/standard-hxm-data-message/
+ * - Change the RAW EDA data to be able to use either Tonic or Phasic => for the calculations.
+ * - Add another 2 colors on the "relaxed" zone  => 7 colors = Dark Blue, Light Blue, Dark Green, LIGHT GREEN (BASELINE), Yellow, Orange and RED.
+ * - Record data and annotations.
+ * - App for setting baseline levels.
+ * - Support three modes: Just EDA, Just Heart Rate, Both EDA and HR
  */
 
 /**
@@ -102,19 +107,26 @@ public class GlimMainActivity extends Activity {
 	private int mBufferSize = 0;
 	private int mCounter = 0;
 
-	/** Five bands that we are currently using.*/
-	private final static int FIRST_BAND = 250;
-	private final static int SECOND_BAND = 251;
-	private final static int THIRD_BAND = 252;
-	private final static int FOURTH_BAND = 253;
-	private final static int FIFTH_BAND = 254;
-	private final static int DEFAULT_BAND = 255;
+	/** Seven bands that we are currently using.*/
+	private final static int LOWEST_BAND = 249;
+	private final static int SECOND_LOWER_BAND = 250;
+	private final static int FIRST_LOWER_BAND = 251; 
+	private final static int BASE_BAND = 252;
+	private final static int FIRST_UPPER_BAND = 253;
+	private final static int SECOND_UPPER_BAND = 254;
+	private final static int HIGHEST_BAND = 255;
+
+	/** Base band width.*/
+	private final static float BASE_BAND_WIDTH_DP = 180f;
+
+	/** Width shift between bands. */
+	private final static float BAND_WIDTH_SHIFT_DP = 40f;
 
 	/** Stores the last value of shift. Used to identify if a shift led to band change. */
 	private int lastShiftValue = 0;
-	private int lastBandValue = DEFAULT_BAND;
+	private int lastBandValue = BASE_BAND;
 	private boolean isBandChanging = false;
-	
+
 	/** How long should the screen remain bright when a band changes in milliseconds*/
 	private final static long SCREEN_UP_TIME = 3000;
 
@@ -127,9 +139,9 @@ public class GlimMainActivity extends Activity {
 
 	/** Base values for HR and EDA.*/
 	//TODO Should be determined through data collection for a week.
-	public final static float BASE_HR_VALUE = 70;
-	public final static float BASE_EDA_VALUE = 0.052f;
-	
+	public final static float BASE_HR_VALUE = 65;
+	public final static float BASE_EDA_VALUE = 0.45f;
+
 	public final static float DIM_SCREEN_BRIGHTNESS = 0.05f;
 	public final static float BRIGHT_SCREEN_BRIGHTNESS = 0.9f;
 
@@ -201,7 +213,7 @@ public class GlimMainActivity extends Activity {
 					hrValueTV.setText(heartRateText);
 					float currentHR = Float.parseFloat(heartRateText);
 					mapHrEda.put("HR", currentHR);
-					//updateHeartRateBand(currentHR);
+
 					Log.d("Heart Rate",Float.toString(currentHR));
 					updateBand();
 				}
@@ -218,55 +230,8 @@ public class GlimMainActivity extends Activity {
 		}
 	};
 
-	public void updateHeartRateBand(float heartRateValue) {
-		if (heartRateValue < 65.0) { // Rest condition
-
-			llRestIndicator.setBackgroundResource(R.color.green_bright);
-			llRestIndicator.getLayoutParams().width = (int)(280*dpToPixelsScale +0.5f);
-			llActiveIndicator.setBackgroundResource(R.color.yellow_dull);
-			llActiveIndicator.getLayoutParams().width = (int)(70*dpToPixelsScale +0.5f);
-			llHyperIndicator.setBackgroundResource(R.color.red_dull);
-			llHyperIndicator.getLayoutParams().width = (int)(70*dpToPixelsScale +0.5f);
-			MarginLayoutParams params=(MarginLayoutParams)hrValueTV.getLayoutParams();
-			params.leftMargin=(int)(140*dpToPixelsScale +0.5f);
-			//here 100 means 100px,not 80% of the width of the parent view
-			//you may need a calculation to convert the percentage to pixels. 
-			hrValueTV.setTextColor(Color.WHITE);
-			hrValueTV.setLayoutParams(params);
-		} else if (heartRateValue >= 65.0 && heartRateValue < 70.0) { // Active
-			// condition
-
-			llRestIndicator.setBackgroundResource(R.color.green_dull);
-			llRestIndicator.getLayoutParams().width = (int)(70*dpToPixelsScale +0.5f);
-			llActiveIndicator.setBackgroundResource(R.color.yellow_bright);
-			llActiveIndicator.getLayoutParams().width = (int)(280*dpToPixelsScale +0.5f);
-			llHyperIndicator.setBackgroundResource(R.color.red_dull);
-			llHyperIndicator.getLayoutParams().width = (int)(70*dpToPixelsScale +0.5f);
-			MarginLayoutParams params=(MarginLayoutParams)hrValueTV.getLayoutParams();
-			params.leftMargin=(int)(210*dpToPixelsScale +0.5f);
-			//here 100 means 100px,not 80% of the width of the parent view
-			//you may need a calculation to convert the percentage to pixels. 
-			hrValueTV.setTextColor(Color.BLACK);
-			hrValueTV.setLayoutParams(params);
-		} else { // Hyper condition
-
-			llRestIndicator.setBackgroundResource(R.color.green_dull);
-			llRestIndicator.getLayoutParams().width = (int)(70*dpToPixelsScale +0.5f);
-			llActiveIndicator.setBackgroundResource(R.color.yellow_dull);
-			llActiveIndicator.getLayoutParams().width = (int)(70*dpToPixelsScale +0.5f);
-			llHyperIndicator.setBackgroundResource(R.color.red_bright);
-			llHyperIndicator.getLayoutParams().width = (int)(280*dpToPixelsScale +0.5f);
-			MarginLayoutParams params=(MarginLayoutParams)hrValueTV.getLayoutParams();
-			params.leftMargin=(int)(280*dpToPixelsScale +0.5f);
-			//here 100 means 100px,not 80% of the width of the parent view
-			//you may need a calculation to convert the percentage to pixels. 
-			hrValueTV.setTextColor(Color.WHITE);
-			hrValueTV.setLayoutParams(params);
-		}
-	}
-
 	/**
-	 * 
+	 * Dark Blue, Light Blue, Dark Green, LIGHT GREEN (BASELINE), Yellow, Orange and RED.
 	 * @param heartRateValue
 	 */
 	public void updateBand() {
@@ -274,112 +239,117 @@ public class GlimMainActivity extends Activity {
 		Handler handler = new Handler();
 		int currentBandValue;
 		Log.d("Shift", Integer.toString(shiftValue));
-		
+
 		switch(shiftValue) {
-		case 0:
-		case 1:// Rest condition //Blue
-			currentBandValue = FIRST_BAND;
+		case -6:
+		case -5: //Lowest Band //Dark Blue
+			currentBandValue = LOWEST_BAND;
 			if(currentBandValue != lastBandValue) {
 				llSignalIndicator.setBackgroundResource(R.color.blue_bright);
-				llSignalIndicator.getLayoutParams().width = (int)(180*dpToPixelsScale +0.5f);
 				hrValueTV.setTextColor(Color.WHITE);
 				edaValueTV.setTextColor(Color.WHITE);
-				brightScreen();
-				handler.postDelayed(new Runnable() {
-					public void run() {
-						dimScreen();
-					}
-				}, SCREEN_UP_TIME);
-				lastBandValue = FIRST_BAND;
+			}
+			break;
+		case -4:
+		case -3: //Second Lower Band //Light bLue
+			currentBandValue = SECOND_LOWER_BAND;
+			if(currentBandValue != lastBandValue) {
+				llSignalIndicator.setBackgroundResource(R.color.blue_dull);
+				hrValueTV.setTextColor(Color.WHITE);
+				edaValueTV.setTextColor(Color.WHITE);
+			}
+			break;
+		case -2:
+		case -1: //First Lower Band //Dark Green
+			currentBandValue = FIRST_LOWER_BAND;
+			if(currentBandValue != lastBandValue) {
+				llSignalIndicator.setBackgroundResource(R.color.green_bright);
+				hrValueTV.setTextColor(Color.WHITE);
+				edaValueTV.setTextColor(Color.WHITE);
+			}
+			break;
+		case 0:
+		case 1:// Base Condition //Light Green
+			currentBandValue = BASE_BAND;
+			if(currentBandValue != lastBandValue) {
+				llSignalIndicator.setBackgroundResource(R.color.green_dull);
+				hrValueTV.setTextColor(Color.WHITE);
+				edaValueTV.setTextColor(Color.WHITE);
 			}
 			break;
 		case 2:
-		case 3:// Active condition //Green
-			currentBandValue = SECOND_BAND;
+		case 3:// Active condition //Yellow
+			currentBandValue = FIRST_UPPER_BAND;
 			if(currentBandValue != lastBandValue) {
-				llSignalIndicator.setBackgroundResource(R.color.green_bright);
-				llSignalIndicator.getLayoutParams().width = (int)(220*dpToPixelsScale +0.5f);
+				llSignalIndicator.setBackgroundResource(R.color.yellow_bright);
 				hrValueTV.setTextColor(Color.BLACK);
 				edaValueTV.setTextColor(Color.BLACK);
-				brightScreen();
-				handler.postDelayed(new Runnable() {
-					public void run() {
-						dimScreen();
-					}
-				}, SCREEN_UP_TIME);
-				lastBandValue = SECOND_BAND;
 			}
 			break;
 		case 4:
-		case 5: // Hyper Active condition //Yellow
-			currentBandValue = THIRD_BAND;
+		case 5: // Hyper Active condition //Orange
+			currentBandValue = SECOND_UPPER_BAND;
 			if(currentBandValue != lastBandValue) {
-				llSignalIndicator.setBackgroundResource(R.color.yellow_bright);
-				llSignalIndicator.getLayoutParams().width = (int)(260*dpToPixelsScale +0.5f);
+				llSignalIndicator.setBackgroundResource(R.color.orange_bright);
 				hrValueTV.setTextColor(Color.BLACK);
 				edaValueTV.setTextColor(Color.BLACK);
-				brightScreen();
-				handler.postDelayed(new Runnable() {
-					public void run() {
-						dimScreen();
-					}
-				}, SCREEN_UP_TIME);
-				lastBandValue = THIRD_BAND;
 			}
 			break;
 		case 6:
-		case 7: //Orange
-			currentBandValue = FOURTH_BAND;
+		case 7: //Red
+			currentBandValue = HIGHEST_BAND;
 			if(currentBandValue != lastBandValue) {
-				llSignalIndicator.setBackgroundResource(R.color.orange_bright);
-				llSignalIndicator.getLayoutParams().width = (int)(300*dpToPixelsScale +0.5f);
+				llSignalIndicator.setBackgroundResource(R.color.red_bright);
 				hrValueTV.setTextColor(Color.BLACK);
 				edaValueTV.setTextColor(Color.BLACK);
-				brightScreen();
-				handler.postDelayed(new Runnable() {
-					public void run() {
-						dimScreen();
-					}
-				}, SCREEN_UP_TIME);
-				lastBandValue = FOURTH_BAND;
 			}
 			break;
 		default: // Stay in hyper //Red
-			currentBandValue = FIFTH_BAND;
+			currentBandValue = HIGHEST_BAND;
 			if(currentBandValue != lastBandValue) {
 				llSignalIndicator.setBackgroundResource(R.color.red_bright);
-				llSignalIndicator.getLayoutParams().width = (int)(360*dpToPixelsScale +0.5f);
 				hrValueTV.setTextColor(Color.WHITE);
 				edaValueTV.setTextColor(Color.WHITE);
-				brightScreen();
-				handler.postDelayed(new Runnable() {
-					public void run() {
-						dimScreen();
-					}
-				}, SCREEN_UP_TIME);
-				lastBandValue = FIFTH_BAND;
 			}
 			break;
+		}
+		if(currentBandValue != lastBandValue) {
+			llSignalIndicator.getLayoutParams().width = calculateBandWidth(currentBandValue);
+			brightScreen();
+			handler.postDelayed(new Runnable() {
+				public void run() {
+					dimScreen();
+				}
+			}, SCREEN_UP_TIME);
+			lastBandValue = currentBandValue;
 		}
 	}
 
 	/**
 	 * Calculating the total shift in band based on percentage increase in both EDA and HR values from base levels.
-	 * Note that either one of them can compensate for the other. Also we are interest in 10% increase only.
+	 * Note that either one of them can compensate for the other. Also we are interested in 10% increase only.
 	 * @return
 	 */
 	public int totalShift() {
 		float edaValue = mapHrEda.get("EDA");
 		float hrValue = mapHrEda.get("HR");
 
-		//TODO Handle cases when the value is negative and remove Math.abs
-		float percentageIncrEDA = Math.abs(((edaValue-BASE_EDA_VALUE)/BASE_EDA_VALUE)*100); 
-		float percentageIncrHR = Math.abs(((hrValue-BASE_HR_VALUE)/BASE_HR_VALUE)*100);
+		float percentageIncrEDA = ((edaValue-BASE_EDA_VALUE)/BASE_EDA_VALUE)*100; 
+		float percentageIncrHR = ((hrValue-BASE_HR_VALUE)/BASE_HR_VALUE)*100;
 
 		int shiftEDA = (int) (percentageIncrEDA/MIN_PERCENTAGE_LEVEL_SHIFT);
 		int shiftHR = (int) (percentageIncrHR/MIN_PERCENTAGE_LEVEL_SHIFT);
 
 		return shiftEDA+shiftHR;
+	}
+
+	/**
+	 * Calculates the width of the band based on the band value.
+	 * @param currentBandValue
+	 * @return
+	 */
+	public int calculateBandWidth(int currentBandValue) {
+		return (int) ((BASE_BAND_WIDTH_DP + (currentBandValue-BASE_BAND)*BAND_WIDTH_SHIFT_DP)*dpToPixelsScale + 0.5f);
 	}
 
 	@Override
@@ -396,8 +366,6 @@ public class GlimMainActivity extends Activity {
 
 		mEdaBtDeviceName = new String(); 
 		mHrmBtDeviceName = new String();
-
-		
 
 		mapHrEda = new HashMap<String, Float>();
 		mapHrEda.put("EDA", BASE_EDA_VALUE);
@@ -419,11 +387,8 @@ public class GlimMainActivity extends Activity {
 		llSignalIndicator = ((LinearLayout) findViewById(R.id.signalIndicator));
 		hrValueTV = (TextView) findViewById(R.id.labelHrValue);
 		edaValueTV = (TextView) findViewById(R.id.labelEdaValue);
-		
+
 		mWindowMgrLayoutParams = this.getWindow().getAttributes();
-		//		instantSpeedTV = (TextView) findViewById(R.id.InstantSpeed);
-		// mImageView = (ImageView) findViewById(R.id.heartBeatImage);
-		// mPulseHeartAnim = AnimationUtils.loadAnimation(this, R.anim.pulse);
 	}
 
 	public void dimScreen() {
@@ -597,9 +562,9 @@ public class GlimMainActivity extends Activity {
 			connectBtEdaDevice(edaDeviceMacId);
 
 			// If HRM is not paired already then do so
-			connectBtHrmDevice(hrmDeviceMacId);
+			//connectBtHrmDevice(hrmDeviceMacId);
 
-			startListeningForData();
+			//startListeningForData();
 		}
 	}
 
@@ -615,23 +580,23 @@ public class GlimMainActivity extends Activity {
 			mEdaBtDeviceName = mEdaBtDevice.getName();
 			pairDevice(mEdaBtDevice);
 		} 
-		try {
-
-			mBtSocket = mEdaBtDevice
-					.createRfcommSocketToServiceRecord(MY_UUID_FOR_NON_ANDROID_DEVICES);
-			mBtSocket.connect();
-		} catch (IOException e) {
-			//e.printStackTrace();
-			System.err.println("Could not connect to EDA Sensor.");
-		}
-
-		try {
-			mOutputStream = mBtSocket.getOutputStream();
-			mInputStream = mBtSocket.getInputStream();
-		} catch (IOException e) {
-			//e.printStackTrace();
-			System.err.println("Could not open an insput stream.");
-		}
+//		try {
+//			mBtAdapter.cancelDiscovery();
+//			mBtSocket = mEdaBtDevice
+//					.createRfcommSocketToServiceRecord(MY_UUID_FOR_NON_ANDROID_DEVICES);
+//			mBtSocket.connect();
+//		} catch (IOException e) {
+//			//e.printStackTrace();
+//			System.err.println("Could not connect to EDA Sensor.");
+//		}
+//
+//		try {
+//			mOutputStream = mBtSocket.getOutputStream();
+//			mInputStream = mBtSocket.getInputStream();
+//		} catch (IOException e) {
+//			//e.printStackTrace();
+//			System.err.println("Could not open an insput stream.");
+//		}
 
 	}
 
@@ -1017,12 +982,22 @@ public class GlimMainActivity extends Activity {
 
 	private void pairDevice(BluetoothDevice device) {
 		try {
-
-			Log.d(TAG, "Start Pairing...");
-			Method m = device.getClass().getMethod("createBond", (Class[])null);
-			device.getClass().getMethod("setPairingConfirmation", boolean.class).invoke(device, true);
-			device.getClass().getMethod("cancelPairingUserInput", boolean.class).invoke(device);
-			m.invoke(device, (Object[])null);
+			final String HRM_PIN = "1234";
+			final String EDA_PIN = "0000";
+			String pinString = new String();
+			String deviceMacId = device.getAddress();
+//			Log.d(TAG, "Pairing confirmation set");
+//			device.setPairingConfirmation(true);
+//			if(deviceMacId == GlimMainActivity.BT_MAC_ADD_FOR_EDA_SENSOR) {
+//				Log.d(TAG, "Pin set");
+//				device.setPin(EDA_PIN.getBytes());
+//			}
+			
+			if(device.createBond()) Log.d("EDA", "Pairing begins" );
+//			Method m = device.getClass().getMethod("createBond", (Class[])null);
+//			device.getClass().getMethod("setPairingConfirmation", boolean.class).invoke(device, true);
+//			device.getClass().getMethod("cancelPairingUserInput", boolean.class).invoke(device);
+//			m.invoke(device, (Object[])null);
 			Log.d(TAG, "Pairing finished.");
 		} catch (Exception e) {
 			Log.e(TAG, e.getMessage());

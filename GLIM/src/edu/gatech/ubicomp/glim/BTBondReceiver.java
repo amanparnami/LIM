@@ -12,8 +12,7 @@ public class BTBondReceiver extends BroadcastReceiver {
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		Bundle b = intent.getExtras();
-		BluetoothDevice device = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(b.get(
-				"android.bluetooth.device.extra.DEVICE").toString());
+		BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE); 
 		Log.d("Bond state", "BOND_STATED = " + device.getBondState());
 	}
 }
